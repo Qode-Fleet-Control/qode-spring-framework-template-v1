@@ -5,6 +5,8 @@ import java.nio.file.Files;
 
 import org.apache.catalina.Context;
 import org.apache.catalina.startup.Tomcat;
+import org.apache.tomcat.util.descriptor.web.FilterDef;
+import org.apache.tomcat.util.descriptor.web.FilterMap;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
 
@@ -32,6 +34,16 @@ public final class Application {
 		Context root = tomcat.addContext("", baseDir.getAbsolutePath());
 		Tomcat.addServlet(root, "dispatcher", new DispatcherServlet(context)).setLoadOnStartup(1);
 		root.addServletMappingDecoded("/", "dispatcher");
+
+		// KEEP THIS: one log line per request (status + duration) is what the workspace Monitoring tab charts.
+		FilterDef requestLog = new FilterDef();
+		requestLog.setFilterName("requestLog");
+		requestLog.setFilter(new RequestLogFilter());
+		root.addFilterDef(requestLog);
+		FilterMap requestLogMap = new FilterMap();
+		requestLogMap.setFilterName("requestLog");
+		requestLogMap.addURLPattern("/*");
+		root.addFilterMap(requestLogMap);
 
 		tomcat.start();
 		System.out.println("listening on 0.0.0.0:" + port);
